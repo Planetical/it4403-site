@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <title>IT 4403 Single Book</title>
+
+  <style>
+    #bookDetail {
+      display: flex;
+      gap: 25px;
+      align-items: flex-start;
+    }
+
+    #bookDetail img {
+      border-radius: 6px;
+      width: 180px;
+      flex-shrink: 0;
+    }
+
+    #bookDetail .book-info h2 {
+      margin-top: 0;
+      font-size: 1.5em;
+    }
+
+    #bookDetail .book-info h3 {
+      margin-top: 0;
+      font-size: 1em;
+      font-weight: normal;
+      color: #ccc;
+    }
+
+    #bookDetail .book-info p {
+      line-height: 1.6;
+    }
+
+    #bookDetail .book-meta {
+      font-size: 0.9em;
+      color: #bbb;
+      margin-bottom: 12px;
+    }
+
+    #bookDetail .book-links a {
+      color: #6cb4ee;
+      margin-right: 15px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+
+    <div id="titleNameCombo">
+      <h3>IT 4403: Advanced Web and Mobile Applications</h3>
+      <h6>Adam Hutcheson</h6>
+    </div>
+
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="exercises.html">Exercises</a>
+      <a href="labs.html">Labs</a>
+    </nav>
+
+  </header>
+
+  <main>
+
+    <section id="overview">
+      <h1>Single Book Data</h1>
+      <hr>
+      <div id="bookDetail"></div>
+    </section>
+
+  </main>
+
+  <script>
+    $(document).ready(function () {
+      $.getJSON("google-books-book.json", function (bookData) {
+        const info = bookData.volumeInfo;
+
+        const authors = info.authors.join(", ");
+        const isbns = info.industryIdentifiers
+          .map(id => id.type.replace("_", "-") + ": " + id.identifier)
+          .join(" | ");
+
+        const html = `
+          <img src="${info.imageLinks.thumbnail}" alt="${info.title} cover">
+          <div class="book-info">
+            <h2>${info.title}</h2>
+            <h3>${info.subtitle}</h3>
+            <div class="book-meta">
+              <p><strong>Author(s):</strong> ${authors}</p>
+              <p><strong>Publisher:</strong> ${info.publisher}</p>
+              <p><strong>Published:</strong> ${info.publishedDate}</p>
+              <p><strong>Pages:</strong> ${info.pageCount}</p>
+              <p><strong>Categories:</strong> ${info.categories.join(", ")}</p>
+              <p><strong>Language:</strong> ${info.language}</p>
+              <p><strong>ISBN:</strong> ${isbns}</p>
+            </div>
+            <p>${info.description}</p>
+            <div class="book-links">
+              <a href="${info.previewLink}" target="_blank">Preview</a>
+              <a href="${info.infoLink}" target="_blank">More Info</a>
+              <a href="${info.canonicalVolumeLink}" target="_blank">Google Play</a>
+            </div>
+          </div>
+        `;
+
+        $("#bookDetail").html(html);
+      });
+    });
+  </script>
+
+</body>
+
+</html>

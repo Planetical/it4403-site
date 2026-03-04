@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <title>IT 4403 Book List</title>
+
+  <style>
+    .book-card {
+      background-color: #2c2c2c;
+      color: #fff;
+      border-radius: 12px;
+      padding: 25px 30px;
+      margin-bottom: 20px;
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+    }
+
+    .book-card img {
+      border-radius: 6px;
+      width: 130px;
+      flex-shrink: 0;
+    }
+
+    .book-card .book-info h2 {
+      margin-top: 0;
+      font-size: 1.3em;
+    }
+
+    .book-card .book-info h3 {
+      margin-top: 0;
+      font-size: 0.95em;
+      font-weight: normal;
+      color: #ccc;
+    }
+
+    .book-card .book-info p {
+      line-height: 1.5;
+      font-size: 0.9em;
+    }
+
+    .book-card .book-meta {
+      font-size: 0.85em;
+      color: #bbb;
+      margin-bottom: 10px;
+    }
+
+    .book-card .book-meta p {
+      margin: 4px 0;
+    }
+
+    .book-card .book-links a {
+      color: #6cb4ee;
+      margin-right: 15px;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+
+    <div id="titleNameCombo">
+      <h3>IT 4403: Advanced Web and Mobile Applications</h3>
+      <h6>Adam Hutcheson</h6>
+    </div>
+
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="exercises.html">Exercises</a>
+      <a href="labs.html">Labs</a>
+    </nav>
+
+  </header>
+
+  <main>
+
+    <section id="overview">
+      <h1>Book List Data</h1>
+      <hr>
+      <div id="bookList"></div>
+    </section>
+
+  </main>
+
+  <script>
+    $(document).ready(function () {
+      $.getJSON("google-books-search.json", function (data) {
+        $.each(data.items, function (i, book) {
+          const info = book.volumeInfo;
+
+          const authors = info.authors ? info.authors.join(", ") : "Unknown";
+          const isbns = info.industryIdentifiers
+            ? info.industryIdentifiers
+                .map(id => id.type.replace("_", "-") + ": " + id.identifier)
+                .join(" | ")
+            : "N/A";
+          const thumbnail = info.imageLinks ? info.imageLinks.thumbnail : "";
+
+          const html = `
+            <div class="book-card">
+              ${thumbnail ? `<img src="${thumbnail}" alt="${info.title} cover">` : ""}
+              <div class="book-info">
+                <h2>${info.title}</h2>
+                ${info.subtitle ? `<h3>${info.subtitle}</h3>` : ""}
+                <div class="book-meta">
+                  <p><strong>Author(s):</strong> ${authors}</p>
+                  <p><strong>Publisher:</strong> ${info.publisher || "N/A"}</p>
+                  <p><strong>Published:</strong> ${info.publishedDate || "N/A"}</p>
+                  <p><strong>Pages:</strong> ${info.pageCount || "N/A"}</p>
+                  <p><strong>Categories:</strong> ${info.categories ? info.categories.join(", ") : "N/A"}</p>
+                  <p><strong>ISBN:</strong> ${isbns}</p>
+                </div>
+                <p>${info.description || ""}</p>
+                <div class="book-links">
+                  <a href="${info.previewLink}" target="_blank">Preview</a>
+                  <a href="${info.infoLink}" target="_blank">More Info</a>
+                  <a href="${info.canonicalVolumeLink}" target="_blank">Google Books</a>
+                </div>
+              </div>
+            </div>
+          `;
+
+          $("#bookList").append(html);
+        });
+      });
+    });
+  </script>
+
+</body>
+
+</html>
