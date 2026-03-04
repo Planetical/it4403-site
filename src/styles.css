@@ -1,21 +1,108 @@
 * {
   font-family: Arial, Helvetica, sans-serif;
+  box-sizing: border-box;
 }
 
 html, body {
   margin: 0;
   border: 0;
   padding: 0;
+  background-color: #f0f0f0;
+}
+
+header {
+  background-color: #2c2c2c;
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 30px;
+}
+
+#titleNameCombo h3,
+#titleNameCombo h6 {
+  margin: 0;
+  color: #fff;
+}
+
+#titleNameCombo h3 {
+  font-size: 1.1em;
+}
+
+#titleNameCombo h6 {
+  font-size: 0.85em;
+  font-weight: normal;
+  margin-top: 4px;
+}
+
+header nav {
+  display: flex;
+  gap: 10px;
+}
+
+header nav a {
+  color: #fff;
+  text-decoration: none;
+  border: 1px solid #fff;
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+
+header nav a:hover {
   background-color: #fff;
+  color: #2c2c2c;
 }
 
 main {
   margin: auto;
   width: 50%;
-  padding: 20px;
+  padding: 30px 20px;
 }
 
-main > h1 {
-  text-align: center;
-  font-size: 3.5em;
+#overview,
+#ccseLink,
+#disclaimer {
+  background-color: #2c2c2c;
+  color: #fff;
+  border-radius: 12px;
+  padding: 25px 30px;
+  margin-bottom: 20px;
+}
+
+#overview h1 {
+  text-align: left;
+  font-size: 2em;
+  margin-top: 0;
+}
+
+#overview hr {
+  border: none;
+  border-top: 1px solid #555;
+  margin: 15px 0;
+}
+
+#overview p {
+  line-height: 1.6;
+}
+
+#ccseLink {
+  display: block;
+  color: #fff;
+  text-decoration: none;
+  font-size: 1em;
+}
+
+#ccseLink:hover {
+  opacity: 0.85;
+}
+
+#disclaimer h6 {
+  margin-top: 0;
+  color: #fff;
+}
+
+#disclaimer p {
+  color: #fff;
+  margin-bottom: 0;
 }
