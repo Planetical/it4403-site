@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../styles.css">
+    <title>IT 4403 Milestone 2</title>
+    <style>
+        .hamburger {
+            background: none;
+            border: 1px solid #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 6px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .hamburger span {
+            display: block;
+            width: 22px;
+            height: 2px;
+            background-color: #fff;
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 30px;
+            background-color: #2c2c2c;
+            border: 1px solid #444;
+            border-radius: 4px;
+            min-width: 160px;
+            z-index: 100;
+        }
+
+        .dropdown-menu a {
+            display: block;
+            color: #fff;
+            text-decoration: none;
+            padding: 10px 16px;
+            font-size: 0.9em;
+        }
+
+        .dropdown-menu a:hover {
+            background-color: #444;
+        }
+
+        .dropdown-menu.open {
+            display: block;
+        }
+
+        .nav-wrapper {
+            position: relative;
+        }
+
+        #search {
+            background-color: #2c2c2c;
+            color: #fff;
+            border-radius: 12px;
+            padding: 25px 30px;
+        }
+
+        #search h1 {
+            margin-top: 0;
+            font-size: 2em;
+        }
+
+        #searchBar {
+            display: flex;
+            gap: 10px;
+        }
+
+        #searchInput {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: none;
+            font-size: 0.95em;
+        }
+
+        #searchBtn {
+            padding: 8px 18px;
+            border-radius: 4px;
+            border: none;
+            background-color: #fff;
+            color: #2c2c2c;
+            font-size: 0.95em;
+            cursor: pointer;
+        }
+
+        #searchBtn:hover {
+            background-color: #ddd;
+        }
+
+        #results {
+            margin-top: 20px;
+        }
+
+        #resultsGrid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .book-card {
+            background-color: #3a3a3a;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .book-card img {
+            width: 80px;
+            height: 110px;
+            object-fit: cover;
+            border-radius: 4px;
+            background-color: #555;
+        }
+
+        .book-card a {
+            color: #fff;
+            text-decoration: none;
+            font-size: 0.8em;
+            line-height: 1.3;
+        }
+
+        .book-card a:hover {
+            text-decoration: underline;
+        }
+
+        #pagination {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 20px;
+        }
+
+        .page-btn {
+            background: none;
+            border: 1px solid #fff;
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+        }
+
+        .page-btn.active {
+            background-color: #fff;
+            color: #2c2c2c;
+        }
+
+        .page-btn:hover:not(.active) {
+            background-color: #444;
+        }
+
+        #statusMsg {
+            font-size: 0.9em;
+            color: #ccc;
+            margin-top: 12px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+
+        <div id="titleNameCombo">
+            <h3>Home | Book Search</h3>
+            <h6>Adam Hutcheson</h6>
+        </div>
+
+        <div class="nav-wrapper">
+            <button class="hamburger" onclick="this.nextElementSibling.classList.toggle('open')" aria-label="Open menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <nav class="dropdown-menu">
+                <a href="milestoneTwoHome.html">Home</a>
+                <a href="myBookshelf.html"></a>
+            </nav>
+        </div>
+
+    </header>
+
+    <main>
+
+        <section id="search">
+            <h1>Book Search</h1>
+            <div id="searchBar">
+                <input type="text" id="searchInput" placeholder="Search books..." />
+                <button id="searchBtn">Search</button>
+            </div>
+            <p id="statusMsg"></p>
+        </section>
+
+        <section id="results">
+            <div id="resultsGrid"></div>
+            <div id="pagination"></div>
+        </section>
+
+    </main>
+
+    <script>
+        // Close nav dropdown when clicking outside
+        document.addEventListener('click', function (e) {
+            const wrapper = document.querySelector('.nav-wrapper');
+            if (!wrapper.contains(e.target)) {
+                document.querySelector('.dropdown-menu').classList.remove('open');
+            }
+        });
+
+        const RESULTS_PER_PAGE = 20;
+        const MAX_PAGES = 3;
+        const PLACEHOLDER_COVER = 'https://via.placeholder.com/80x110?text=No+Cover';
+
+        let currentQuery = '';
+        let currentPage = 1;
+
+        document.getElementById('searchBtn').addEventListener('click', startSearch);
+        document.getElementById('searchInput').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') startSearch();
+        });
+
+        function startSearch() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) return;
+            currentQuery = query;
+            currentPage = 1;
+            fetchAndRender();
+        }
+
+        async function fetchAndRender() {
+            const statusMsg = document.getElementById('statusMsg');
+            const grid = document.getElementById('resultsGrid');
+            const pagination = document.getElementById('pagination');
+
+            statusMsg.textContent = 'Searching...';
+            grid.innerHTML = '';
+            pagination.innerHTML = '';
+
+            const startIndex = (currentPage - 1) * RESULTS_PER_PAGE;
+            const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(currentQuery)}&maxResults=${RESULTS_PER_PAGE}&startIndex=${startIndex}`;
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`API error: ${response.status}`);
+                const data = await response.json();
+
+                const items = data.items || [];
+                const totalItems = data.totalItems || 0;
+
+                if (items.length === 0) {
+                    statusMsg.textContent = 'No results found.';
+                    return;
+                }
+
+                const totalPages = Math.min(MAX_PAGES, Math.ceil(totalItems / RESULTS_PER_PAGE));
+                statusMsg.textContent = `Showing page ${currentPage} of ${totalPages} (${totalItems.toLocaleString()} total results)`;
+
+                items.forEach(item => {
+                    const info = item.volumeInfo || {};
+                    const title = info.title || 'Untitled';
+                    const cover = info.imageLinks?.smallThumbnail || info.imageLinks?.thumbnail || PLACEHOLDER_COVER;
+
+                    const card = document.createElement('div');
+                    card.className = 'book-card';
+                    card.innerHTML = `
+                        <a href="bookDetails.html?id=${encodeURIComponent(item.id)}">
+                            <img src="${cover}" alt="Cover of ${title.replace(/"/g, '&quot;')}" />
+                            <br>${title}
+                        </a>
+                    `;
+                    grid.appendChild(card);
+                });
+
+                renderPagination(totalPages);
+
+            } catch (err) {
+                statusMsg.textContent = `Error: ${err.message}`;
+            }
+        }
+
+        function renderPagination(totalPages) {
+            const pagination = document.getElementById('pagination');
+            pagination.innerHTML = '';
+
+            for (let i = 1; i <= totalPages; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'page-btn' + (i === currentPage ? ' active' : '');
+                btn.textContent = i;
+                btn.addEventListener('click', () => {
+                    currentPage = i;
+                    fetchAndRender();
+                    document.getElementById('search').scrollIntoView({ behavior: 'smooth' });
+                });
+                pagination.appendChild(btn);
+            }
+        }
+    </script>
+</body>
+
+</html>
