@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../styles.css">
+    <title>My Bookshelf | IT 4403 Milestone 2</title>
+    <style>
+        .hamburger {
+            background: none;
+            border: 1px solid #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 6px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .hamburger span {
+            display: block;
+            width: 22px;
+            height: 2px;
+            background-color: #fff;
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 30px;
+            background-color: #2c2c2c;
+            border: 1px solid #444;
+            border-radius: 4px;
+            min-width: 160px;
+            z-index: 100;
+        }
+
+        .dropdown-menu a {
+            display: block;
+            color: #fff;
+            text-decoration: none;
+            padding: 10px 16px;
+            font-size: 0.9em;
+        }
+
+        .dropdown-menu a:hover {
+            background-color: #444;
+        }
+
+        .dropdown-menu.open {
+            display: block;
+        }
+
+        .nav-wrapper {
+            position: relative;
+        }
+
+        #shelf-header {
+            background-color: #2c2c2c;
+            color: #fff;
+            border-radius: 12px;
+            padding: 25px 30px;
+        }
+
+        #shelf-header h1 {
+            margin-top: 0;
+            font-size: 2em;
+        }
+
+        #statusMsg {
+            color: #ccc;
+            margin-bottom: 0;
+            font-size: 0.9em;
+        }
+
+        #resultsGrid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .book-card {
+            background-color: #3a3a3a;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .book-card img {
+            width: 80px;
+            height: 110px;
+            object-fit: cover;
+            border-radius: 4px;
+            background-color: #555;
+        }
+
+        .book-card a {
+            color: #fff;
+            text-decoration: none;
+            font-size: 0.8em;
+            line-height: 1.3;
+        }
+
+        .book-card a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+
+        <div id="titleNameCombo">
+            <h3>My Bookshelf</h3>
+            <h6>Adam Hutcheson</h6>
+        </div>
+
+        <div class="nav-wrapper">
+            <button class="hamburger" onclick="this.nextElementSibling.classList.toggle('open')" aria-label="Open menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <nav class="dropdown-menu">
+                <a href="milestoneTwoHome.html">Home</a>
+                <a href="myBookshelf.html">My Bookshelf</a>
+            </nav>
+        </div>
+
+    </header>
+
+    <main>
+
+        <section id="shelf-header">
+            <h1>My Bookshelf</h1>
+            <p id="statusMsg">Loading books...</p>
+        </section>
+
+        <div id="resultsGrid"></div>
+
+    </main>
+
+    <script>
+        const MY_BOOK_IDS = [
+            'jXNADwAAQBAJ', // Scary Stories to Tell in the Dark
+            '47YVAAAAYAAJ', // Critique of Pure Reason
+            'CQFwDwAAQBAJ', // The Metamorphosis
+            'hlb_sM1AN0gC', // The Hunger Games
+            'Iw_gHtk4ghYC', // Mockingjay
+            'rBjcAwAAQBAJ', // Catching Fire
+            'DggeRs0uxM8C', // Brokeback Mountain
+            'Wfan6L9RGgYC', // The Modern Web
+        ];
+
+        const API_KEY = 'AIzaSyBS1DDhTiyfNT7e_tLacvcUYp5lCUGekjg';
+        const PLACEHOLDER_COVER = 'https://via.placeholder.com/80x110?text=No+Cover';
+
+        async function loadBookshelf() {
+            const statusMsg = document.getElementById('statusMsg');
+            const grid = document.getElementById('resultsGrid');
+
+            statusMsg.textContent = 'Loading bookshelf...';
+
+            const results = await Promise.allSettled(
+                MY_BOOK_IDS.map(id =>
+                    fetch(`https://www.googleapis.com/books/v1/volumes/${id}?key=${API_KEY}`)
+                        .then(r => r.ok ? r.json() : Promise.reject(`HTTP ${r.status}`))
+                )
+            );
+
+            const loaded = results.filter(r => r.status === 'fulfilled').map(r => r.value);
+            const failed = results.filter(r => r.status === 'rejected').length;
+
+            if (loaded.length === 0) {
+                statusMsg.textContent = 'No books could be loaded.';
+                return;
+            }
+
+            loaded.forEach(item => {
+                const info = item.volumeInfo || {};
+                const title = info.title || 'Untitled';
+                const cover = info.imageLinks?.smallThumbnail || info.imageLinks?.thumbnail || PLACEHOLDER_COVER;
+
+                const card = document.createElement('div');
+                card.className = 'book-card';
+                card.innerHTML = `
+                    <a href="bookDetails.html?id=${encodeURIComponent(item.id)}">
+                        <img src="${cover}" alt="Cover of ${title.replace(/"/g, '&quot;')}" />
+                        <br>${title}
+                    </a>
+                `;
+                grid.appendChild(card);
+            });
+
+            statusMsg.textContent = `${loaded.length} book(s) on your shelf` + (failed > 0 ? ` (${failed} failed to load)` : '');
+        }
+
+        document.addEventListener('click', function (e) {
+            const wrapper = document.querySelector('.nav-wrapper');
+            if (!wrapper.contains(e.target)) {
+                document.querySelector('.dropdown-menu').classList.remove('open');
+            }
+        });
+
+        loadBookshelf();
+    </script>
+
+</body>
+
+</html>
