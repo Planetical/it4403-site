@@ -251,7 +251,7 @@
             pagination.innerHTML = '';
 
             const startIndex = (currentPage - 1) * RESULTS_PER_PAGE;
-            const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(currentQuery)}&maxResults=${RESULTS_PER_PAGE}&startIndex=${startIndex}`;
+            const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(currentQuery)}&maxResults=${RESULTS_PER_PAGE}&startIndex=${startIndex}?key=AIzaSyBS1DDhTiyfNT7e_tLacvcUYp5lCUGekjg`;
 
             try {
                 const response = await fetch(url);
