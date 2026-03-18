@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../styles.css">
+    <title>Book Details</title>
+    <style>
+        .hamburger {
+            background: none;
+            border: 1px solid #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 6px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .hamburger span {
+            display: block;
+            width: 22px;
+            height: 2px;
+            background-color: #fff;
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 30px;
+            background-color: #2c2c2c;
+            border: 1px solid #444;
+            border-radius: 4px;
+            min-width: 160px;
+            z-index: 100;
+        }
+
+        .dropdown-menu a {
+            display: block;
+            color: #fff;
+            text-decoration: none;
+            padding: 10px 16px;
+            font-size: 0.9em;
+        }
+
+        .dropdown-menu a:hover {
+            background-color: #444;
+        }
+
+        .dropdown-menu.open {
+            display: block;
+        }
+
+        .nav-wrapper {
+            position: relative;
+        }
+
+        #book-detail {
+            background-color: #2c2c2c;
+            color: #fff;
+            border-radius: 12px;
+            padding: 25px 30px;
+        }
+
+        #book-detail h1 {
+            margin-top: 0;
+            font-size: 1.8em;
+        }
+
+        .book-layout {
+            display: flex;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .book-cover img {
+            max-width: 200px;
+            border-radius: 6px;
+            background-color: #555;
+        }
+
+        .book-info {
+            flex: 1;
+        }
+
+        .book-info p {
+            line-height: 1.6;
+            margin: 8px 0;
+        }
+
+        .book-info .label {
+            font-weight: bold;
+            color: #ccc;
+        }
+
+        .book-description {
+            margin-top: 20px;
+            line-height: 1.6;
+            border-top: 1px solid #555;
+            padding-top: 16px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 16px;
+            color: #fff;
+            text-decoration: none;
+            font-size: 0.9em;
+            border: 1px solid #fff;
+            padding: 6px 14px;
+            border-radius: 4px;
+        }
+
+        .back-link:hover {
+            background-color: #fff;
+            color: #2c2c2c;
+        }
+
+        #statusMsg {
+            font-size: 0.9em;
+            color: #ccc;
+            margin-top: 12px;
+        }
+
+        @media (max-width: 600px) {
+            .book-layout {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div id="titleNameCombo">
+            <h3>Book Details</h3>
+            <h6>Adam Hutcheson</h6>
+        </div>
+
+        <div class="nav-wrapper">
+            <button class="hamburger" onclick="this.nextElementSibling.classList.toggle('open')" aria-label="Open menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <nav class="dropdown-menu">
+                <a href="milestoneTwoHome.html">Home</a>
+                <a href="myBookshelf.html">My Bookshelf</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <a href="milestoneTwoHome.html" class="back-link">&larr; Back to Search</a>
+
+        <section id="book-detail">
+            <p id="statusMsg">Loading book details...</p>
+        </section>
+    </main>
+
+    <script>
+        // Close nav dropdown when clicking outside
+        document.addEventListener('click', function (e) {
+            const wrapper = document.querySelector('.nav-wrapper');
+            if (!wrapper.contains(e.target)) {
+                document.querySelector('.dropdown-menu').classList.remove('open');
+            }
+        });
+
+        // Get the book ID from URL parameters
+        const params = new URLSearchParams(window.location.search);
+        const bookId = params.get('id');
+
+        if (!bookId) {
+            document.getElementById('statusMsg').textContent = 'No book ID provided. Please go back and select a book.';
+        } else {
+            fetchBookDetails(bookId);
+        }
+
+        async function fetchBookDetails(id) {
+            const statusMsg = document.getElementById('statusMsg');
+            const detailSection = document.getElementById('book-detail');
+
+            try {
+                const url = `https://www.googleapis.com/books/v1/volumes/${encodeURIComponent(id)}?key=AIzaSyBS1DDhTiyfNT7e_tLacvcUYp5lCUGekjg`;
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`API error: ${response.status}`);
+                const book = await response.json();
+
+                const info = book.volumeInfo || {};
+                const saleInfo = book.saleInfo || {};
+
+                const title = info.title || 'Untitled';
+                const authors = info.authors ? info.authors.join(', ') : 'Unknown';
+                const publisher = info.publisher || 'Unknown';
+                const description = info.description || 'No description available.';
+                const cover = info.imageLinks?.thumbnail || info.imageLinks?.smallThumbnail || '';
+
+                // Price info
+                let priceText = 'Not available';
+                if (saleInfo.retailPrice) {
+                    priceText = `${saleInfo.retailPrice.amount} ${saleInfo.retailPrice.currencyCode}`;
+                } else if (saleInfo.listPrice) {
+                    priceText = `${saleInfo.listPrice.amount} ${saleInfo.listPrice.currencyCode}`;
+                } else if (saleInfo.saleability === 'FREE') {
+                    priceText = 'Free';
+                } else if (saleInfo.saleability === 'NOT_FOR_SALE') {
+                    priceText = 'Not for sale';
+                }
+
+                detailSection.innerHTML = `
+                    <h1>${escapeHtml(title)}</h1>
+                    <div class="book-layout">
+                        <div class="book-cover">
+                            ${cover ? `<img src="${cover}" alt="Cover of ${escapeHtml(title)}" />` : '<p>No cover image available</p>'}
+                        </div>
+                        <div class="book-info">
+                            <p><span class="label">Authors:</span> ${escapeHtml(authors)}</p>
+                            <p><span class="label">Publisher:</span> ${escapeHtml(publisher)}</p>
+                            <p><span class="label">Price:</span> ${escapeHtml(priceText)}</p>
+                        </div>
+                    </div>
+                    <div class="book-description">
+                        <p><span class="label">Description:</span></p>
+                        <p>${info.description || 'No description available.'}</p>
+                    </div>
+                `;
+
+            } catch (err) {
+                statusMsg.textContent = `Error loading book details: ${err.message}`;
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+
+</html>
