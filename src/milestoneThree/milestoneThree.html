@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../styles.css">
+    <title>IT 4403 Milestone 3</title>
+    <style>
+        /* ── Nav ───────────────────────────────────────────── */
+        .hamburger {
+            background: none;
+            border: 1px solid #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 6px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .hamburger span {
+            display: block;
+            width: 22px;
+            height: 2px;
+            background-color: #fff;
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 30px;
+            background-color: #2c2c2c;
+            border: 1px solid #444;
+            border-radius: 4px;
+            min-width: 160px;
+            z-index: 100;
+        }
+
+        .dropdown-menu a {
+            display: block;
+            color: #fff;
+            text-decoration: none;
+            padding: 10px 16px;
+            font-size: 0.9em;
+        }
+
+        .dropdown-menu a:hover { background-color: #444; }
+
+        .dropdown-menu.open { display: block; }
+
+        .nav-wrapper { position: relative; }
+
+        /* ── Shared card panel style ───────────────────────── */
+        .panel {
+            background-color: #2c2c2c;
+            color: #fff;
+            border-radius: 12px;
+            padding: 25px 30px;
+            margin-bottom: 24px;
+        }
+
+        .panel h2 {
+            margin-top: 0;
+            font-size: 1.6em;
+        }
+
+        /* ── Search bar ────────────────────────────────────── */
+        #searchBar {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        #searchInput {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: none;
+            font-size: 0.95em;
+        }
+
+        #searchBtn {
+            padding: 8px 18px;
+            border-radius: 4px;
+            border: none;
+            background-color: #fff;
+            color: #2c2c2c;
+            font-size: 0.95em;
+            cursor: pointer;
+        }
+
+        #searchBtn:hover { background-color: #ddd; }
+
+        #statusMsg {
+            font-size: 0.85em;
+            color: #ccc;
+            margin-top: 10px;
+            min-height: 1.2em;
+        }
+
+        /* ── Two-column layout (results | details) ─────────── */
+        #contentArea {
+            display: flex;
+            gap: 24px;
+            align-items: flex-start;
+        }
+
+        #resultsColumn {
+            flex: 1;
+            min-width: 0;
+        }
+
+        #detailsColumn {
+            width: 320px;
+            flex-shrink: 0;
+        }
+
+        /* ── Results grid ──────────────────────────────────── */
+        #resultsGrid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 14px;
+            margin-top: 16px;
+        }
+
+        .movie-card {
+            background-color: #3a3a3a;
+            border-radius: 8px;
+            padding: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.15s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .movie-card:hover { background-color: #4a4a4a; }
+
+        .movie-card.selected { outline: 2px solid #fff; }
+
+        .movie-card img {
+            width: 80px;
+            height: 115px;
+            object-fit: cover;
+            border-radius: 4px;
+            background-color: #555;
+        }
+
+        .movie-card .card-title {
+            font-size: 0.75em;
+            color: #fff;
+            line-height: 1.3;
+        }
+
+        /* ── Pagination ────────────────────────────────────── */
+        #pagination {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 18px;
+        }
+
+        .page-btn {
+            background: none;
+            border: 1px solid #fff;
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+        }
+
+        .page-btn.active {
+            background-color: #fff;
+            color: #2c2c2c;
+        }
+
+        .page-btn:hover:not(.active) { background-color: #444; }
+
+        /* ── Details panel ─────────────────────────────────── */
+        #detailsPanel {
+            display: none;
+        }
+
+        #detailsPanel .detail-poster img {
+            width: 100%;
+            border-radius: 6px;
+            margin-bottom: 14px;
+        }
+
+        #detailsPanel h3 {
+            margin: 0 0 8px;
+            font-size: 1.2em;
+        }
+
+        #detailsPanel .meta {
+            font-size: 0.82em;
+            color: #ccc;
+            margin: 4px 0;
+        }
+
+        #detailsPanel .overview {
+            font-size: 0.88em;
+            line-height: 1.6;
+            margin-top: 12px;
+            border-top: 1px solid #444;
+            padding-top: 12px;
+        }
+
+        /* ── Collection grid ───────────────────────────────── */
+        #collectionGrid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            gap: 14px;
+            margin-top: 16px;
+        }
+
+        /* ── Responsive ────────────────────────────────────── */
+        @media (max-width: 700px) {
+            #contentArea { flex-direction: column; }
+            #detailsColumn { width: 100%; }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div id="titleNameCombo">
+            <h3>Milestone 3</h3>
+            <h6>Adam Hutcheson</h6>
+        </div>
+        <div class="nav-wrapper">
+            <button class="hamburger" onclick="this.nextElementSibling.classList.toggle('open')" aria-label="Open menu">
+                <span></span><span></span><span></span>
+            </button>
+            <nav class="dropdown-menu">
+                <a href="../index.html">Home Page</a>
+                <a href="milestoneThree.html">Milestone 3</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+
+        <!-- Search -->
+        <section class="panel">
+            <h2>Search Movies</h2>
+            <div id="searchBar">
+                <input type="text" id="searchInput" placeholder="Search for a movie..." />
+                <button id="searchBtn">Search</button>
+            </div>
+            <p id="statusMsg"></p>
+        </section>
+
+        <!-- Results + Details side by side -->
+        <div id="contentArea">
+
+            <div id="resultsColumn">
+                <section class="panel" id="resultsPanel" style="display:none;">
+                    <h2>Results</h2>
+                    <div id="resultsGrid"></div>
+                    <div id="pagination"></div>
+                </section>
+            </div>
+
+            <div id="detailsColumn">
+                <section class="panel" id="detailsPanel">
+                    <!-- filled by JS on card click -->
+                </section>
+            </div>
+
+        </div>
+
+        <!-- Top Rated Collection -->
+        <section class="panel">
+            <h2>Top Rated Movies</h2>
+            <p id="collectionStatus" style="font-size:0.85em; color:#ccc;"></p>
+            <div id="collectionGrid"></div>
+        </section>
+
+    </main>
+
+    <script>
+        // ── Close dropdown on outside click ──────────────────
+        document.addEventListener('click', function (e) {
+            const wrapper = document.querySelector('.nav-wrapper');
+            if (!wrapper.contains(e.target)) {
+                document.querySelector('.dropdown-menu').classList.remove('open');
+            }
+        });
+
+        // ── Config ────────────────────────────────────────────
+        const API_KEY = 'b1ec7f49f5f23d7dfff6dc3b1ecfa513';
+        const IMG_BASE = 'https://image.tmdb.org/t/p/w185';
+        const RESULTS_PER_VIEW = 10;
+        const TOTAL_RESULTS = 50; // 5 pages × 10
+
+        // ── State ─────────────────────────────────────────────
+        let allResults = [];   // up to 50 fetched movies
+        let currentPage = 1;  // current view page (1–5)
+
+        // ── Search wiring ─────────────────────────────────────
+        document.getElementById('searchBtn').addEventListener('click', startSearch);
+        document.getElementById('searchInput').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') startSearch();
+        });
+
+        function startSearch() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) return;
+            currentPage = 1;
+            allResults = [];
+            fetchSearchResults(query);
+        }
+
+        // TMDB returns 20 per page; fetch pages 1–3 to collect 50+ then slice to 50
+        async function fetchSearchResults(query) {
+            const statusMsg = document.getElementById('statusMsg');
+            statusMsg.textContent = 'Searching...';
+            document.getElementById('resultsGrid').innerHTML = '';
+            document.getElementById('pagination').innerHTML = '';
+            document.getElementById('resultsPanel').style.display = 'none';
+
+            try {
+                const fetches = [1, 2, 3].map(p =>
+                    fetch(`https://api.themoviedb.org/3/search/movie?api_key=${API_KEY}&query=${encodeURIComponent(query)}&page=${p}`)
+                        .then(r => { if (!r.ok) throw new Error(`API error ${r.status}`); return r.json(); })
+                );
+
+                const pages = await Promise.all(fetches);
+                const combined = pages.flatMap(p => p.results || []);
+                allResults = combined.slice(0, TOTAL_RESULTS);
+
+                if (allResults.length === 0) {
+                    statusMsg.textContent = 'No results found.';
+                    return;
+                }
+
+                const totalItems = pages[0].total_results || allResults.length;
+                statusMsg.textContent = `Showing ${allResults.length} of ${totalItems.toLocaleString()} results`;
+
+                renderPage(currentPage);
+                document.getElementById('resultsPanel').style.display = 'block';
+
+            } catch (err) {
+                statusMsg.textContent = `Error: ${err.message}`;
+            }
+        }
+
+        // ── Render a view page of 10 results ──────────────────
+        function renderPage(page) {
+            currentPage = page;
+            const grid = document.getElementById('resultsGrid');
+            grid.innerHTML = '';
+
+            const start = (page - 1) * RESULTS_PER_VIEW;
+            const slice = allResults.slice(start, start + RESULTS_PER_VIEW);
+
+            slice.forEach(movie => {
+                const posterUrl = movie.poster_path
+                    ? IMG_BASE + movie.poster_path
+                    : 'https://via.placeholder.com/80x115?text=No+Image';
+
+                const card = document.createElement('div');
+                card.className = 'movie-card';
+                card.dataset.id = movie.id;
+                card.innerHTML = `
+                    <img src="${posterUrl}" alt="${escapeHtml(movie.title)}" />
+                    <span class="card-title">${escapeHtml(movie.title)}</span>
+                `;
+                card.addEventListener('click', () => showDetails(movie.id));
+                grid.appendChild(card);
+            });
+
+            renderPagination();
+        }
+
+        function renderPagination() {
+            const totalPages = Math.ceil(allResults.length / RESULTS_PER_VIEW);
+            const pagination = document.getElementById('pagination');
+            pagination.innerHTML = '';
+
+            for (let i = 1; i <= totalPages; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'page-btn' + (i === currentPage ? ' active' : '');
+                btn.textContent = i;
+                btn.addEventListener('click', () => {
+                    renderPage(i);
+                    document.getElementById('resultsPanel').scrollIntoView({ behavior: 'smooth' });
+                });
+                pagination.appendChild(btn);
+            }
+        }
+
+        // ── Details panel ─────────────────────────────────────
+        async function showDetails(movieId) {
+            const panel = document.getElementById('detailsPanel');
+            panel.style.display = 'block';
+            panel.innerHTML = '<p style="color:#ccc;font-size:0.9em;">Loading...</p>';
+
+            // Highlight selected card
+            document.querySelectorAll('.movie-card').forEach(c => c.classList.remove('selected'));
+            const activeCard = document.querySelector(`.movie-card[data-id="${movieId}"]`);
+            if (activeCard) activeCard.classList.add('selected');
+
+            try {
+                const res = await fetch(
+                    `https://api.themoviedb.org/3/movie/${movieId}?api_key=${API_KEY}`
+                );
+                if (!res.ok) throw new Error(`API error ${res.status}`);
+                const m = await res.json();
+
+                const poster = m.poster_path
+                    ? `https://image.tmdb.org/t/p/w342${m.poster_path}`
+                    : null;
+                const rating = m.vote_average ? m.vote_average.toFixed(1) : 'N/A';
+                const release = m.release_date || 'Unknown';
+                const genres = m.genres?.map(g => g.name).join(', ') || 'N/A';
+                const overview = m.overview || 'No overview available.';
+
+                panel.innerHTML = `
+                    ${poster ? `<div class="detail-poster"><img src="${poster}" alt="${escapeHtml(m.title)}" /></div>` : ''}
+                    <h3>${escapeHtml(m.title)}</h3>
+                    <p class="meta">Release Date: ${escapeHtml(release)}</p>
+                    <p class="meta">Rating: ⭐ ${rating} / 10</p>
+                    <p class="meta">Genres: ${escapeHtml(genres)}</p>
+                    <div class="overview">${escapeHtml(overview)}</div>
+                `;
+            } catch (err) {
+                panel.innerHTML = `<p style="color:#ccc;">Error loading details: ${err.message}</p>`;
+            }
+        }
+
+        // ── Top Rated Movies collection ───────────────────────
+        async function loadTopRated() {
+            const status = document.getElementById('collectionStatus');
+            const grid = document.getElementById('collectionGrid');
+            status.textContent = 'Loading...';
+
+            try {
+                const res = await fetch(
+                    `https://api.themoviedb.org/3/movie/top_rated?api_key=${API_KEY}&page=1`
+                );
+                if (!res.ok) throw new Error(`API error ${res.status}`);
+                const data = await res.json();
+                const movies = data.results || [];
+
+                status.textContent = '';
+                grid.innerHTML = '';
+
+                movies.forEach(movie => {
+                    const posterUrl = movie.poster_path
+                        ? IMG_BASE + movie.poster_path
+                        : 'https://via.placeholder.com/80x115?text=No+Image';
+
+                    const card = document.createElement('div');
+                    card.className = 'movie-card';
+                    card.dataset.id = movie.id;
+                    card.innerHTML = `
+                        <img src="${posterUrl}" alt="${escapeHtml(movie.title)}" />
+                        <span class="card-title">${escapeHtml(movie.title)}</span>
+                    `;
+                    card.addEventListener('click', () => {
+                        showDetails(movie.id);
+                        document.getElementById('detailsColumn').scrollIntoView({ behavior: 'smooth' });
+                    });
+                    grid.appendChild(card);
+                });
+
+            } catch (err) {
+                status.textContent = `Error: ${err.message}`;
+            }
+        }
+
+        loadTopRated();
+
+        // ── Helpers ───────────────────────────────────────────
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
+        }
+    </script>
+</body>
+
+</html>
