@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/mustache@4.2.0/mustache.min.js"></script>
     <title>IT 4403 Milestone 3</title>
     <style>
         /* ── Nav ───────────────────────────────────────────── */
@@ -46,11 +47,17 @@
             font-size: 0.9em;
         }
 
-        .dropdown-menu a:hover { background-color: #444; }
+        .dropdown-menu a:hover {
+            background-color: #444;
+        }
 
-        .dropdown-menu.open { display: block; }
+        .dropdown-menu.open {
+            display: block;
+        }
 
-        .nav-wrapper { position: relative; }
+        .nav-wrapper {
+            position: relative;
+        }
 
         /* ── Shared card panel style ───────────────────────── */
         .panel {
@@ -91,7 +98,9 @@
             cursor: pointer;
         }
 
-        #searchBtn:hover { background-color: #ddd; }
+        #searchBtn:hover {
+            background-color: #ddd;
+        }
 
         #statusMsg {
             font-size: 0.85em;
@@ -138,9 +147,13 @@
             gap: 6px;
         }
 
-        .movie-card:hover { background-color: #4a4a4a; }
+        .movie-card:hover {
+            background-color: #4a4a4a;
+        }
 
-        .movie-card.selected { outline: 2px solid #fff; }
+        .movie-card.selected {
+            outline: 2px solid #fff;
+        }
 
         .movie-card img {
             width: 80px;
@@ -154,6 +167,10 @@
             font-size: 0.75em;
             color: #fff;
             line-height: 1.3;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            min-width: 0;
+            width: 100%;
         }
 
         /* ── Pagination ────────────────────────────────────── */
@@ -179,7 +196,9 @@
             color: #2c2c2c;
         }
 
-        .page-btn:hover:not(.active) { background-color: #444; }
+        .page-btn:hover:not(.active) {
+            background-color: #444;
+        }
 
         /* ── Details panel ─────────────────────────────────── */
         #detailsPanel {
@@ -219,10 +238,111 @@
             margin-top: 16px;
         }
 
+        /* ── Panel header (title + view toggle) ───────────── */
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        .panel-header h2 {
+            margin: 0;
+        }
+
+        .view-toggle {
+            display: flex;
+            gap: 6px;
+        }
+
+        .toggle-btn {
+            background: none;
+            border: 1px solid #555;
+            color: #aaa;
+            border-radius: 4px;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-size: 1em;
+            line-height: 1;
+        }
+
+        .toggle-btn.active {
+            border-color: #fff;
+            color: #fff;
+            background-color: #444;
+        }
+
+        .toggle-btn:hover:not(.active) {
+            border-color: #888;
+            color: #ddd;
+        }
+
+        /* ── List view overrides ───────────────────────────── */
+        .list-view {
+            display: flex !important;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .list-view .movie-card {
+            flex-direction: row;
+            text-align: left;
+            padding: 8px 12px;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .list-view .movie-card img {
+            width: 40px;
+            height: 58px;
+            flex-shrink: 0;
+        }
+
+        .list-view .movie-card .card-title {
+            font-size: 0.88em;
+            align-self: center;
+        }
+
         /* ── Responsive ────────────────────────────────────── */
         @media (max-width: 700px) {
-            #contentArea { flex-direction: column; }
-            #detailsColumn { width: 100%; }
+
+            /* Override global styles.css main width */
+            main {
+                width: 92%;
+                padding: 16px 0;
+            }
+
+            #contentArea {
+                flex-direction: column;
+            }
+
+            #detailsColumn {
+                width: 100%;
+            }
+
+            /* Stack search input and button vertically */
+            #searchBar {
+                flex-direction: column;
+            }
+
+            #searchBtn {
+                width: 100%;
+            }
+
+            /* Fewer columns on small screens */
+            #resultsGrid {
+                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            }
+
+            #collectionGrid {
+                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            }
+
+            .movie-card img {
+                width: 60px;
+                height: 87px;
+            }
         }
     </style>
 </head>
@@ -262,7 +382,13 @@
 
             <div id="resultsColumn">
                 <section class="panel" id="resultsPanel" style="display:none;">
-                    <h2>Results</h2>
+                    <div class="panel-header">
+                        <h2>Results</h2>
+                        <div class="view-toggle">
+                            <button class="toggle-btn active" id="gridBtn" title="Grid view">⊞</button>
+                            <button class="toggle-btn" id="listBtn" title="List view">☰</button>
+                        </div>
+                    </div>
                     <div id="resultsGrid"></div>
                     <div id="pagination"></div>
                 </section>
@@ -278,12 +404,48 @@
 
         <!-- Top Rated Collection -->
         <section class="panel">
-            <h2>Top Rated Movies</h2>
+            <div class="panel-header">
+                <h2>Top Rated Movies</h2>
+                <div class="view-toggle">
+                    <button class="toggle-btn active" id="gridBtnTop" title="Grid view">⊞</button>
+                    <button class="toggle-btn" id="listBtnTop" title="List view">☰</button>
+                </div>
+            </div>
             <p id="collectionStatus" style="font-size:0.85em; color:#ccc;"></p>
             <div id="collectionGrid"></div>
         </section>
 
     </main>
+
+    <!-- Mustache template: movie card (used for search results and top rated) -->
+    <script id="card-template" type="x-tmpl-mustache">
+        {{#movies}}
+        <div class="movie-card" data-id="{{id}}">
+            <img src="{{posterUrl}}" alt="{{title}}" />
+            <span class="card-title">{{title}}</span>
+        </div>
+        {{/movies}}
+    </script>
+
+    <!-- Mustache template: movie list row -->
+    <script id="list-card-template" type="x-tmpl-mustache">
+        {{#movies}}
+        <div class="movie-card" data-id="{{id}}">
+            <img src="{{posterUrl}}" alt="{{title}}" />
+            <span class="card-title">{{title}}</span>
+        </div>
+        {{/movies}}
+    </script>
+
+    <!-- Mustache template: details panel -->
+    <script id="details-template" type="x-tmpl-mustache">
+        {{#poster}}<div class="detail-poster"><img src="{{poster}}" alt="{{title}}" /></div>{{/poster}}
+        <h3>{{title}}</h3>
+        <p class="meta">Release Date: {{release}}</p>
+        <p class="meta">Rating: ⭐ {{rating}} / 10</p>
+        <p class="meta">Genres: {{genres}}</p>
+        <div class="overview">{{overview}}</div>
+    </script>
 
     <script>
         // ── Close dropdown on outside click ──────────────────
@@ -301,8 +463,31 @@
         const TOTAL_RESULTS = 50; // 5 pages × 10
 
         // ── State ─────────────────────────────────────────────
-        let allResults = [];   // up to 50 fetched movies
-        let currentPage = 1;  // current view page (1–5)
+        let allResults = [];       // up to 50 fetched movies
+        let currentPage = 1;       // current view page (1–5)
+        let topRatedCache = [];    // cached for re-render on toggle
+        let resultsViewMode = 'grid';
+        let topRatedViewMode = 'grid';
+
+        // ── View toggle wiring ────────────────────────────────
+        document.getElementById('gridBtn').addEventListener('click', () => setResultsView('grid'));
+        document.getElementById('listBtn').addEventListener('click', () => setResultsView('list'));
+        document.getElementById('gridBtnTop').addEventListener('click', () => setTopRatedView('grid'));
+        document.getElementById('listBtnTop').addEventListener('click', () => setTopRatedView('list'));
+
+        function setResultsView(mode) {
+            resultsViewMode = mode;
+            document.getElementById('gridBtn').classList.toggle('active', mode === 'grid');
+            document.getElementById('listBtn').classList.toggle('active', mode === 'list');
+            if (allResults.length > 0) renderPage(currentPage);
+        }
+
+        function setTopRatedView(mode) {
+            topRatedViewMode = mode;
+            document.getElementById('gridBtnTop').classList.toggle('active', mode === 'grid');
+            document.getElementById('listBtnTop').classList.toggle('active', mode === 'list');
+            if (topRatedCache.length > 0) renderTopRatedGrid();
+        }
 
         // ── Search wiring ─────────────────────────────────────
         document.getElementById('searchBtn').addEventListener('click', startSearch);
@@ -356,25 +541,27 @@
         function renderPage(page) {
             currentPage = page;
             const grid = document.getElementById('resultsGrid');
-            grid.innerHTML = '';
 
             const start = (page - 1) * RESULTS_PER_VIEW;
             const slice = allResults.slice(start, start + RESULTS_PER_VIEW);
 
-            slice.forEach(movie => {
-                const posterUrl = movie.poster_path
-                    ? IMG_BASE + movie.poster_path
-                    : 'https://via.placeholder.com/80x115?text=No+Image';
+            const templateId = resultsViewMode === 'list' ? 'list-card-template' : 'card-template';
+            grid.className = resultsViewMode === 'list' ? 'list-view' : '';
+            grid.innerHTML = Mustache.render(
+                document.getElementById(templateId).innerHTML,
+                {
+                    movies: slice.map(movie => ({
+                        id: movie.id,
+                        title: movie.title,
+                        posterUrl: movie.poster_path
+                            ? IMG_BASE + movie.poster_path
+                            : 'https://dummyimage.com/80x115/000/fff&text=No+Image'
+                    }))
+                }
+            );
 
-                const card = document.createElement('div');
-                card.className = 'movie-card';
-                card.dataset.id = movie.id;
-                card.innerHTML = `
-                    <img src="${posterUrl}" alt="${escapeHtml(movie.title)}" />
-                    <span class="card-title">${escapeHtml(movie.title)}</span>
-                `;
-                card.addEventListener('click', () => showDetails(movie.id));
-                grid.appendChild(card);
+            grid.querySelectorAll('.movie-card').forEach(card => {
+                card.addEventListener('click', () => showDetails(card.dataset.id));
             });
 
             renderPagination();
@@ -415,63 +602,59 @@
                 if (!res.ok) throw new Error(`API error ${res.status}`);
                 const m = await res.json();
 
-                const poster = m.poster_path
-                    ? `https://image.tmdb.org/t/p/w342${m.poster_path}`
-                    : null;
-                const rating = m.vote_average ? m.vote_average.toFixed(1) : 'N/A';
-                const release = m.release_date || 'Unknown';
-                const genres = m.genres?.map(g => g.name).join(', ') || 'N/A';
-                const overview = m.overview || 'No overview available.';
-
-                panel.innerHTML = `
-                    ${poster ? `<div class="detail-poster"><img src="${poster}" alt="${escapeHtml(m.title)}" /></div>` : ''}
-                    <h3>${escapeHtml(m.title)}</h3>
-                    <p class="meta">Release Date: ${escapeHtml(release)}</p>
-                    <p class="meta">Rating: ⭐ ${rating} / 10</p>
-                    <p class="meta">Genres: ${escapeHtml(genres)}</p>
-                    <div class="overview">${escapeHtml(overview)}</div>
-                `;
+                panel.innerHTML = Mustache.render(
+                    document.getElementById('details-template').innerHTML,
+                    {
+                        title: m.title,
+                        poster: m.poster_path ? `https://image.tmdb.org/t/p/w342${m.poster_path}` : null,
+                        rating: m.vote_average ? m.vote_average.toFixed(1) : 'N/A',
+                        release: m.release_date || 'Unknown',
+                        genres: m.genres?.map(g => g.name).join(', ') || 'N/A',
+                        overview: m.overview || 'No overview available.'
+                    }
+                );
             } catch (err) {
                 panel.innerHTML = `<p style="color:#ccc;">Error loading details: ${err.message}</p>`;
             }
         }
 
         // ── Top Rated Movies collection ───────────────────────
+        function renderTopRatedGrid() {
+            const grid = document.getElementById('collectionGrid');
+            const templateId = topRatedViewMode === 'list' ? 'list-card-template' : 'card-template';
+            grid.className = topRatedViewMode === 'list' ? 'list-view' : '';
+            grid.innerHTML = Mustache.render(
+                document.getElementById(templateId).innerHTML,
+                {
+                    movies: topRatedCache.map(movie => ({
+                        id: movie.id,
+                        title: movie.title,
+                        posterUrl: movie.poster_path
+                            ? IMG_BASE + movie.poster_path
+                            : 'https://dummyimage.com/80x115/000/fff&text=No+Image'
+                    }))
+                }
+            );
+            grid.querySelectorAll('.movie-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    showDetails(card.dataset.id);
+                    document.getElementById('detailsColumn').scrollIntoView({ behavior: 'smooth' });
+                });
+            });
+        }
+
         async function loadTopRated() {
             const status = document.getElementById('collectionStatus');
-            const grid = document.getElementById('collectionGrid');
             status.textContent = 'Loading...';
-
             try {
                 const res = await fetch(
                     `https://api.themoviedb.org/3/movie/top_rated?api_key=${API_KEY}&page=1`
                 );
                 if (!res.ok) throw new Error(`API error ${res.status}`);
                 const data = await res.json();
-                const movies = data.results || [];
-
+                topRatedCache = data.results || [];
                 status.textContent = '';
-                grid.innerHTML = '';
-
-                movies.forEach(movie => {
-                    const posterUrl = movie.poster_path
-                        ? IMG_BASE + movie.poster_path
-                        : 'https://via.placeholder.com/80x115?text=No+Image';
-
-                    const card = document.createElement('div');
-                    card.className = 'movie-card';
-                    card.dataset.id = movie.id;
-                    card.innerHTML = `
-                        <img src="${posterUrl}" alt="${escapeHtml(movie.title)}" />
-                        <span class="card-title">${escapeHtml(movie.title)}</span>
-                    `;
-                    card.addEventListener('click', () => {
-                        showDetails(movie.id);
-                        document.getElementById('detailsColumn').scrollIntoView({ behavior: 'smooth' });
-                    });
-                    grid.appendChild(card);
-                });
-
+                renderTopRatedGrid();
             } catch (err) {
                 status.textContent = `Error: ${err.message}`;
             }
@@ -479,12 +662,6 @@
 
         loadTopRated();
 
-        // ── Helpers ───────────────────────────────────────────
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text || '';
-            return div.innerHTML;
-        }
     </script>
 </body>
 
